@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go mod download
-RUN go build cmd/server/server.go
+RUN go mod tidy
+RUN go build -o server cmd/server/server.go
 
-CMD [ "server" ]
+CMD [ "/app/server" ]

@@ -22,8 +22,9 @@ type Server struct {
 	subscribersMu sync.Mutex
 
 	// API endpoints
-	subscribeEndpoint string
-	publishEndpoint   string
+	subscribeEndpoint   string
+	publishEndpoint     string
+	healthcheckEndpoint string
 }
 
 // Function implemented to be able to use our Server struct as a http.Handler.
@@ -50,12 +51,14 @@ func (server *Server) ListenAndServe(address string) {
 // - one for clients to send messages (publish).
 func NewServer() *Server {
 	server := &Server{
-		subscribers:       make(map[*websocket.Conn]struct{}),
-		subscribeEndpoint: "/subscribe",
-		publishEndpoint:   "/publish",
+		subscribers:         make(map[*websocket.Conn]struct{}),
+		subscribeEndpoint:   "/subscribe",
+		publishEndpoint:     "/publish",
+		healthcheckEndpoint: "/healthcheck",
 	}
 	server.serveMux.HandleFunc(server.subscribeEndpoint, server.subscribeHandler)
 	server.serveMux.HandleFunc(server.publishEndpoint, server.publishHandler)
+	server.serveMux.HandleFunc(server.healthcheckEndpoint, server.healthcheckHandlerwriter)
 	return server
 }
 
@@ -137,4 +140,19 @@ func (server *Server) publishHandler(writer http.ResponseWriter, request *http.R
 
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
 	writer.WriteHeader(http.StatusAccepted)
+}
+
+// Handler when a request on /healthcheck endpoint is received.
+//
+// Parse the received message and send it to every subscribers.
+func (server *Server) healthcheckHandlerwriter(writer http.ResponseWriter, request *http.Request) {
+	// Check we well received a GET http request.
+	if request.Method != "GET" {
+		log.Printf("| /healthcheck: Error because using method '%s'\n", request.Method)
+		http.Error(writer, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	writer.Write([]byte("true"))
 }
