@@ -3,6 +3,8 @@ package client
 import (
 	"fmt"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -26,8 +28,19 @@ func (ui *UI) Start() {
 // Append a new message in the list.
 //
 // {msg} is the message to append at the end of the list.
-func (ui *UI) Append(msg string) {
-	_, err := fmt.Fprintf(ui.messages, "%s\n", msg)
+func (ui *UI) Append(msg Message) {
+	pad := 15 - len(msg.Name)
+	if pad < 0 {
+		pad = 0
+	}
+
+	now := time.Now()
+	hour := fmt.Sprint(now.Hour()) + ":"
+	mins := fmt.Sprint(now.Minute())
+	prefix := strings.Repeat(" ", pad) + msg.Name + " | "
+	line := hour + mins + prefix + msg.Content
+
+	_, err := fmt.Fprintf(ui.messages, "%s\n", line)
 	if err != nil {
 		log.Fatalf("| Error while trying to append msg in UI %v", err)
 	}
