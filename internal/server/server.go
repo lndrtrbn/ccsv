@@ -34,7 +34,7 @@ func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 // To start our http server that listens on the given address.
 func (server *Server) ListenAndServe(address string) {
 	http.Handle("/", server)
-	log.Printf("| HTTP server listening on '%s'\n", address)
+	log.Printf("| HTTP server listening on %s\n", address)
 
 	err := http.ListenAndServe(address, nil)
 	if err != nil {

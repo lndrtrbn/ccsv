@@ -1,7 +1,19 @@
 package main
 
-import "lndr/ccsv/internal/server"
+import (
+	"flag"
+	"lndr/ccsv/internal/server"
+	"log"
+)
 
 func main() {
-	server.NewServer().ListenAndServe(":3000")
+	port := flag.String("port", "", "the port to listen to")
+	flag.Parse()
+
+	if *port == "" {
+		*port = "3000"
+		log.Printf("| No port specified, using default port 3000")
+	}
+
+	server.NewServer().ListenAndServe(":" + *port)
 }
