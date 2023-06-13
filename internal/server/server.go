@@ -20,11 +20,6 @@ type Server struct {
 	subscribers map[*websocket.Conn]struct{}
 	// Mutex to manipulate the list of subscribers.
 	subscribersMu sync.Mutex
-
-	// API endpoints
-	subscribeEndpoint   string
-	publishEndpoint     string
-	healthcheckEndpoint string
 }
 
 // Function implemented to be able to use our Server struct as a http.Handler.
@@ -51,14 +46,11 @@ func (server *Server) ListenAndServe(address string) {
 // - one for clients to send messages (publish).
 func NewServer() *Server {
 	server := &Server{
-		subscribers:         make(map[*websocket.Conn]struct{}),
-		subscribeEndpoint:   "/subscribe",
-		publishEndpoint:     "/publish",
-		healthcheckEndpoint: "/healthcheck",
+		subscribers: make(map[*websocket.Conn]struct{}),
 	}
-	server.serveMux.HandleFunc(server.subscribeEndpoint, server.subscribeHandler)
-	server.serveMux.HandleFunc(server.publishEndpoint, server.publishHandler)
-	server.serveMux.HandleFunc(server.healthcheckEndpoint, server.healthcheckHandlerwriter)
+	server.serveMux.HandleFunc("/subscribe", server.subscribeHandler)
+	server.serveMux.HandleFunc("/publish", server.publishHandler)
+	server.serveMux.HandleFunc("/healthcheck", server.healthcheckHandler)
 	return server
 }
 
@@ -145,7 +137,7 @@ func (server *Server) publishHandler(writer http.ResponseWriter, request *http.R
 // Handler when a request on /healthcheck endpoint is received.
 //
 // Parse the received message and send it to every subscribers.
-func (server *Server) healthcheckHandlerwriter(writer http.ResponseWriter, request *http.Request) {
+func (server *Server) healthcheckHandler(writer http.ResponseWriter, request *http.Request) {
 	// Check we well received a GET http request.
 	if request.Method != "GET" {
 		log.Printf("| /healthcheck: Error because using method '%s'\n", request.Method)
