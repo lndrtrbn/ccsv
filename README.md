@@ -33,12 +33,13 @@ go build cmd/client/client.go
 
 For server:
 
-| Name   | Usage                        | Example       |
-| ------ | ---------------------------- | ------------- |
-| `port` | Port used by the HTTP server | `--port 3333` |
+| Name   | Usage                        | Default | Example       |
+| ------ | ---------------------------- | ------- | ------------- |
+| `port` | Port used by the HTTP server | `3000`  | `--port 3333` |
 
 For client:
 
-| Name   | Usage                           | Example           |
-| ------ | ------------------------------- | ----------------- |
-| `name` | Name of the user using the chat | `--name Michelle` |
+| Name     | Usage                           | Default                 | Example                          |
+| -------- | ------------------------------- | ----------------------- | -------------------------------- |
+| `name`   | Name of the user using the chat | none, mandatory         | `--name Michelle`                |
+| `server` | Address of the HTTP server      | `http://localhost:3000` | `--server http://localhost:3333` |
