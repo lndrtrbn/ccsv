@@ -31,7 +31,7 @@ func main() {
 	}
 
 	chat = client.NewClient(*server, *name)
-	ui = client.NewUI(*name, chat.Send)
+	ui = client.NewUI(*name, chat.SendMessage)
 
 	chat.Start(ui.Append)
 	ui.Start()

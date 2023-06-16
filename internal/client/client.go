@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -25,10 +24,46 @@ type Client struct {
 
 func (client *Client) Start(onMessageFunc func(msg Message)) {
 	go client.readServer(onMessageFunc)
+	client.SendConnect()
 }
 
-func (client *Client) Send(content string) {
+func (client *Client) SendMessage(content string) {
+	client.send(content, NewMessage)
+}
+
+func (client *Client) SendConnect() {
+	client.send("", Connect)
+}
+
+func (client *Client) SendDisconnect() {
+	client.send("", Disconnect)
+}
+
+func NewClient(address string, name string) *Client {
+	headers := http.Header{}
+	headers.Add("X-ACCESS-TOKEN", os.Getenv("ACCESS_TOKEN"))
+	headers.Add("USERNAME", name)
+
+	connection, _, err := websocket.Dial(
+		context.Background(),
+		address+"/subscribe",
+		&websocket.DialOptions{
+			HTTPHeader: headers,
+		})
+	if err != nil {
+		log.Fatalf("| Error while trying to connect the client %v", err)
+	}
+
+	return &Client{
+		name:       name,
+		serverAddr: address,
+		connection: connection,
+	}
+}
+
+func (client *Client) send(content string, msgType MessageType) {
 	message := Message{
+		Type:    msgType,
 		Name:    client.name,
 		Content: content,
 	}
@@ -58,40 +93,17 @@ func (client *Client) Send(content string) {
 	defer resp.Body.Close()
 }
 
-func NewClient(address string, name string) *Client {
-	headers := http.Header{}
-	headers.Add("X-ACCESS-TOKEN", os.Getenv("ACCESS_TOKEN"))
-
-	connection, _, err := websocket.Dial(
-		context.Background(),
-		address+"/subscribe",
-		&websocket.DialOptions{
-			HTTPHeader: headers,
-		})
-	if err != nil {
-		log.Fatalf("| Error while trying to connect the client %v", err)
-	}
-
-	return &Client{
-		name:       name,
-		serverAddr: address,
-		connection: connection,
-	}
-}
-
 func (client *Client) readServer(onMessageFunc func(msg Message)) {
 	for {
 		var msg Message
 		err := wsjson.Read(context.Background(), client.connection, &msg)
 		if err != nil {
-			if err == io.EOF {
-				break
-			}
-
 			log.Printf("| Error while reading message %v", err)
-			continue
+			break
 		}
 
 		onMessageFunc(msg)
 	}
+
+	client.SendDisconnect()
 }

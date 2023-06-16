@@ -29,7 +29,12 @@ func (ui *UI) Start() {
 //
 // {msg} is the message to append at the end of the list.
 func (ui *UI) Append(msg Message) {
-	pad := 15 - len(msg.Name)
+	name := msg.Name
+	if msg.Type != NewMessage {
+		name = ""
+	}
+
+	pad := 15 - len(name)
 	if pad < 0 {
 		pad = 0
 	}
@@ -37,8 +42,26 @@ func (ui *UI) Append(msg Message) {
 	now := time.Now()
 	hour := fmt.Sprint(now.Hour()) + ":"
 	mins := fmt.Sprint(now.Minute())
-	prefix := strings.Repeat(" ", pad) + msg.Name + " | "
-	line := hour + mins + prefix + msg.Content
+	if len(mins) == 1 {
+		mins = "0" + mins
+	}
+
+	prefix := strings.Repeat(" ", pad) + name + " | "
+
+	content := ""
+	switch msg.Type {
+	case NewMessage:
+		content = msg.Content
+	case Connect:
+		content = msg.Name + " joined the room."
+	case Disconnect:
+		content = msg.Name + " leaved the room."
+	}
+
+	line := hour + mins + prefix + content
+	if msg.Type != NewMessage {
+		line = "[grey::i]" + line + "[-::-]"
+	}
 
 	_, err := fmt.Fprintf(ui.messages, "%s\n", line)
 	if err != nil {
@@ -70,7 +93,7 @@ func NewUI(name string, inputDoneFunc func(value string)) *UI {
 }
 
 func newChatView(name string) *tview.TextView {
-	chat := tview.NewTextView()
+	chat := tview.NewTextView().SetDynamicColors(true)
 
 	chat.SetBorder(true).
 		SetTitle("| Chat ("+name+") |").
