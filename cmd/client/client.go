@@ -4,6 +4,8 @@ import (
 	"flag"
 	"lndr/ccsv/internal/client"
 	"log"
+
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -12,6 +14,11 @@ var (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	name := flag.String("name", "", "your pseudo in chat")
 	server := flag.String("server", "", "address of the HTTP server")
 	flag.Parse()
