@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
@@ -37,7 +38,19 @@ func (client *Client) Send(content string) {
 		return
 	}
 
-	resp, err := http.Post(client.serverAddr+"/publish", "application/json", bytes.NewBuffer([]byte(str)))
+	req, err := http.NewRequest(
+		"POST",
+		client.serverAddr+"/publish",
+		bytes.NewBuffer([]byte(str)),
+	)
+	if err != nil {
+		log.Printf("| Error while sending the message %s, %v", message, err)
+		return
+	}
+
+	req.Header.Add("X-ACCESS-TOKEN", os.Getenv("ACCESS_TOKEN"))
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("| Error while sending the message %s, %v", message, err)
 		return
@@ -46,7 +59,15 @@ func (client *Client) Send(content string) {
 }
 
 func NewClient(address string, name string) *Client {
-	connection, _, err := websocket.Dial(context.Background(), address+"/subscribe", nil)
+	headers := http.Header{}
+	headers.Add("X-ACCESS-TOKEN", os.Getenv("ACCESS_TOKEN"))
+
+	connection, _, err := websocket.Dial(
+		context.Background(),
+		address+"/subscribe",
+		&websocket.DialOptions{
+			HTTPHeader: headers,
+		})
 	if err != nil {
 		log.Fatalf("| Error while trying to connect the client %v", err)
 	}
